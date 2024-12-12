@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            background: #f0f0f0;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 150px;
+            height: auto;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0066cc;
+            margin-bottom: 40px;
+            color: #3a6998;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        .qr-card {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 14px;
+            z-index: 1111;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+        }
+
+        .qr-bg {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 240px;
+            height: 240px;
+            z-index: 2;
+            background: rgba(255, 255, 255, .95);
+            backdrop-filter: blur(24px);
+            border-radius: 10px;
+            overflow: hidden;
+            outline: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrCode {
+            z-index: 3;
+        }
+
+        .blob {
+            position: absolute;
+            z-index: 1;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #0066cc;
+            opacity: 1;
+            filter: blur(12px);
+            animation: blob-bounce 5s infinite ease;
+        }
+
+        @keyframes blob-bounce {
+            0% {
+                transform: translate(-100%, -100%) translate3d(0, 0, 0);
+            }
+            25% {
+                transform: translate(-100%, -100%) translate3d(100%, 0, 0);
+            }
+            50% {
+                transform: translate(-100%, -100%) translate3d(100%, 100%, 0);
+            }
+            75% {
+                transform: translate(-100%, -100%) translate3d(0, 100%, 0);
+            }
+            100% {
+                transform: translate(-100%, -100%) translate3d(0, 0, 0);
+            }
+        }
+
+        .date-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .date, .day {
+            font-size: 1.2rem;
+            color: #333;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <img src="Station-S_blue_logo.png" alt="Station-S Logo" class="logo">
+    <div class="title">Time Tracker</div>
+    <div class="qr-card">
+        <div class="qr-bg">
+            <div id="qrCode"></div>
+        </div>
+        <div class="blob"></div>
+    </div>
+    <div class="date-container">
+        <div class="date"></div>
+        <div class="day"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        async function fetchUniqueValue() {
+            const url = "http://3.108.36.7/app/generateCecinCheckoutQrcode.php";
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.qr_code) {
+                    return data.qr_code.trim();
+                } else {
+                    throw new Error("Invalid response: 'qr_code' property is missing.");
+                }
+            } catch (error) {
+                console.error('Error fetching unique value:', error);
+                return null;
+            }
+        }
+
+        function generateQRCode(value) {
+            const qrCodeElement = document.getElementById('qrCode');
+            qrCodeElement.innerHTML = '';
+            if (value) {
+                new QRCode(qrCodeElement, {
+                    text: value,
+                    width: 200,
+                    height: 200
+                });
+            } else {
+                qrCodeElement.innerHTML = '<p>Error generating QR code. Please try again.</p>';
+            }
+        }
+
+        let x = 0;
+        async function initializeQRCode() {
+            const uniqueValue = await fetchUniqueValue();
+            if (uniqueValue) {
+                console.log('Fetched unique value:', uniqueValue);
+                console.log(x++);
+                generateQRCode(uniqueValue);
+            }
+        }
+
+        setInterval(initializeQRCode, 1000*30);
+        initializeQRCode();
+
+        function updateDateTime() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const now = new Date();
+            const day = days[now.getDay()];
+            const date = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+            document.querySelector('.day').textContent = day;
+            document.querySelector('.date').textContent = date;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>
